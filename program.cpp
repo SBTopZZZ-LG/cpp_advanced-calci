@@ -11,22 +11,10 @@ struct NAO
     NAO() : num(0), opr('\0'), next(nullptr) {}
     NAO(int num) : num(num), opr('\0'), next(nullptr) {}
     NAO(int num, char opr) : num(num), opr(opr), next(nullptr) {}
-
-    ostream &operator<<(ostream &os)
-    {
-        cout << "PREV = " << prev << ", NEXT = " << next << ", ";
-        os << "num = " << num << ", opr = ";
-        if (opr != '\0')
-            cout << opr;
-        else
-            cout << "null_char";
-
-        return os;
-    }
 };
 
-NAO *generateLL(char *);
 int evaluateLL(NAO *);
+NAO *generateLL(char *);
 
 int main()
 {
@@ -34,9 +22,7 @@ int main()
     cout << "Enter the mathematical expression (without whitespaces): ";
     cin >> str;
 
-    NAO *start = generateLL(str), *current = start;
-
-    cout << "Final answer = " << evaluateLL(start) << '\n';
+    cout << "Final answer = " << evaluateLL(generateLL(str)) << '\n';
 
     return 0;
 }
@@ -45,10 +31,82 @@ bool isNumber(char x)
 {
     return x >= '0' && x <= '9';
 }
-
 int toNumber(char x)
 {
     return (x - '0');
+}
+
+int evaluateLL(NAO *start)
+{
+    NAO *current = start;
+    bool pullBackLink = false;
+    while (1)
+    {
+        int val = current->num;
+        char opr = current->opr;
+
+        if (opr == '\0')
+        {
+            if (start == current)
+                break;
+
+            current = start;
+            continue;
+        }
+
+        if (current->next != nullptr)
+        {
+            NAO *next = current->next;
+
+            if ((next->opr == '*' || next->opr == '/') && (opr != '*' && opr != '/'))
+            {
+                pullBackLink = true;
+                current = next;
+
+                continue;
+            }
+            else
+            {
+                switch (opr)
+                {
+                case '+':
+                    val += next->num;
+                    break;
+                case '-':
+                    val -= next->num;
+                    break;
+                case '*':
+                    val *= next->num;
+                    break;
+                case '/':
+                    val /= next->num;
+                    break;
+                }
+
+                next->num = val;
+
+                next->prev = current->prev;
+
+                delete current;
+
+                if (pullBackLink)
+                {
+                    current = current->prev;
+                    current->next = next;
+                    pullBackLink = false;
+
+                    continue;
+                }
+
+                current = next;
+
+                if (current->prev == nullptr)
+                    start = next;
+            }
+        }
+    }
+
+    return start->num;
 }
 
 NAO *generateLL(char *str)
@@ -118,90 +176,4 @@ NAO *generateLL(char *str)
     }
 
     return start;
-}
-
-int evaluateLL(NAO *start)
-{
-    NAO *current = start;
-    bool pullBackLink = false;
-    while (1)
-    {
-        int val = current->num;
-        char opr = current->opr;
-
-        if (opr == '\0')
-        {
-            // cout << "Character was null pointer\n";
-
-            if (start == current)
-                break;
-
-            current = start;
-            continue;
-        }
-
-        if (current->next != nullptr)
-        {
-            NAO *next = current->next;
-
-            if ((next->opr == '*' || next->opr == '/') && (opr != '*' && opr != '/'))
-            {
-                // cout << "initiating pullback\n";
-
-                pullBackLink = true;
-                current = next;
-
-                continue;
-            }
-            else
-            {
-                switch (opr)
-                {
-                case '+':
-                    val += next->num;
-                    break;
-                case '-':
-                    val -= next->num;
-                    break;
-                case '*':
-                    val *= next->num;
-                    break;
-                case '/':
-                    val /= next->num;
-                    break;
-                }
-
-                next->num = val;
-
-                // cout << "result = " << next->num << '\n';
-
-                next->prev = current->prev;
-
-                delete current;
-
-                if (pullBackLink)
-                {
-                    // cout << "previous pullback detected\n";
-
-                    current = current->prev;
-                    current->next = next;
-                    pullBackLink = false;
-
-                    continue;
-                }
-
-                // cout << "no previous pullbacks\n";
-
-                current = next;
-
-                if (current->prev == nullptr)
-                {
-                    // cout << "previous of current was null, which means the previous of current was start\n";
-                    start = next;
-                }
-            }
-        }
-    }
-
-    return start->num;
 }
