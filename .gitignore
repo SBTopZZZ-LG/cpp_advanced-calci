@@ -1,0 +1,5 @@
+# Vs Code directory
+/.vscode
+
+# Build files
+/program.dSYM
